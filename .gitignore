@@ -1,2 +1,18 @@
-.vercel
+# Diretório de dependências
+node_modules/
+
+# Arquivos de ambiente local
 .env
+
+# Diretório de build
+dist/
+
+# Arquivos de sistema operacional
+.DS_Store
+Thumbs.db
+
+# Arquivos de configuração de Editores/IDEs
+.vscode/
+
+# Arquivos gerados pela Vercel CLI
+.vercel/
