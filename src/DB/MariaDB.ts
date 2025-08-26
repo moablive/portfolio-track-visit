@@ -3,11 +3,11 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Define uma interface mais específica para a configuração do pool
+// A configuração do pool permanece a mesma, está ótima.
 const dbPoolConfig: PoolOptions = {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
+    password: process.env.DB_PASSWORD, // mysql2 lida bem com 'undefined' se a senha não for definida
     port: parseInt(process.env.DB_PORT || '3306', 10),
     database: process.env.DB_DATABASE,
     waitForConnections: true,
@@ -16,53 +16,49 @@ const dbPoolConfig: PoolOptions = {
     connectTimeout: process.env.DB_CONNECT_TIMEOUT ? parseInt(process.env.DB_CONNECT_TIMEOUT, 10) : 10000
 };
 
-// Validação básica das variáveis de ambiente para o banco de dados
+// A validação inicial também está excelente, vamos mantê-la.
 if (!dbPoolConfig.host || !dbPoolConfig.user || !dbPoolConfig.database) {
-    console.error("Erro Crítico: Variáveis de ambiente do banco de dados (DB_HOST, DB_USER, DB_DATABASE) não estão configuradas.");
-    console.error("A aplicação não pode iniciar sem a configuração do banco de dados.");
-    throw new Error("Configuração do banco de dados incompleta. Verifique as variáveis de ambiente DB_HOST, DB_USER, DB_DATABASE.");
+    console.error("Erro Crítico: Variáveis de ambiente essenciais (DB_HOST, DB_USER, DB_DATABASE) não estão configuradas.");
+    throw new Error("Configuração do banco de dados incompleta. A aplicação não pode iniciar.");
 }
 
-let pool: Pool;
-try {
-    pool = mysql.createPool(dbPoolConfig);
-    console.log('[DB] Pool de conexões com MariaDB/MySQL criado.');
-} catch (error) {
-    const err = error as Error;
-    console.error('[DB] Erro Crítico ao criar o pool de conexões com o MariaDB/MySQL:', err.message);
-    throw err;
-}
+// Criamos o pool de conexões de forma mais direta. O mysql2/promise já pode lançar um erro aqui.
+const pool: Pool = mysql.createPool(dbPoolConfig);
+console.log('[DB] Pool de conexões com MariaDB/MySQL pronto para ser utilizado.');
+
 
 /**
- * Verifica a conexão com o banco de dados obtendo uma conexão do pool.
- * Chama um callback similar ao padrão `connect` do pacote `mysql`.
- * @param callback Função a ser chamada após a tentativa de conexão.
+ * AJUSTE 1: Função de verificação de conexão modernizada.
+ * Agora ela é totalmente baseada em Promises e não precisa mais de um callback.
+ * Retorna uma Promise que resolve se a conexão for bem-sucedida ou rejeita se houver um erro.
+ * Isso permite usar async/await de forma limpa onde for chamada.
+ * @returns {Promise<void>}
 */
-const checkConnection = async (callback: (err: QueryError | Error | null) => void): Promise<void> => {
-    let connection: PoolConnection | null = null; // Usar PoolConnection
+const testConnection = async (): Promise<void> => {
+    let connection: PoolConnection | null = null;
     try {
-        if (!pool) {
-            throw new Error("[DB] Pool de conexões não inicializado ou falhou ao ser criado.");
-        }
         connection = await pool.getConnection();
         await connection.ping();
-        console.log('[DB] Conexão com o banco de dados verificada com sucesso via pool.');
-        callback(null);
+        console.log('[DB] Conexão com o banco de dados verificada com sucesso.');
     } catch (error) {
-        const err = error as QueryError | Error;
-        console.error('[DB] Erro ao verificar a conexão com o banco de dados via pool:', err.message);
-        callback(err);
+        const err = error as QueryError;
+        console.error('[DB] Erro Crítico ao tentar conectar com o banco de dados:', err.message);
+        // Em vez de chamar um callback, nós relançamos o erro para que a Promise seja rejeitada.
+        throw err;
     } finally {
         if (connection) {
-            connection.release(); 
-            console.log('[DB] Conexão de verificação liberada de volta para o pool.');
+            connection.release();
+            console.log('[DB] Conexão de teste liberada de volta para o pool.');
         }
     }
 };
 
-const conexao = {
-    pool: pool, 
-    connect: checkConnection
-};
 
-export default conexao;
+/**
+ * AJUSTE 2: Estrutura de exportação simplificada.
+ * Exportamos diretamente o pool. Qualquer parte da aplicação que precisar de uma
+ * conexão poderá importá-lo e usar `pool.getConnection()` ou `pool.query()`.
+ * Também exportamos a função de teste, caso seja útil para verificações de saúde (health checks).
+*/
+export const dbPool = pool;
+export const dbTestConnection = testConnection;
