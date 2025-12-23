@@ -5,7 +5,7 @@ import router from './Routers/routes';
 import { dbTestConnection } from './DB/MariaDB';
 
 const app: Express = express();
-const port: number = parseInt(process.env.PORT || '5000', 10);
+const port: number = parseInt(process.env.PORT || '7099', 10);
 
 // --- Configuração de Middlewares ---
 // Middlewares essenciais devem ser configurados antes das rotas.

@@ -8,7 +8,7 @@ const dbPoolConfig: PoolOptions = {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD, // mysql2 lida bem com 'undefined' se a senha não for definida
-    port: parseInt(process.env.DB_PORT || '3306', 10),
+    port: parseInt(process.env.DB_PORT || '9306', 10),
     database: process.env.DB_DATABASE,
     waitForConnections: true,
     connectionLimit: process.env.DB_CONNECTION_LIMIT ? parseInt(process.env.DB_CONNECTION_LIMIT, 10) : 10,
