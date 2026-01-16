@@ -1,192 +1,161 @@
-markdown
 # API Portfolio Tracker
 
-API desenvolvida com Node.js e Express para rastrear estatísticas de visitas em uma página de portfólio, utilizando MariaDB como banco de dados.
+<p align="center">
+  <img src="https://skillicons.dev/icons?i=nodejs,express,ts,postgres,docker,linux,git" alt="Tecnologias" />
+</p>
+
+<p align="center">
+  API simples e performática para rastreamento de visitas do seu portfólio.<br>
+  <strong>Node.js + Express + TypeScript + PostgreSQL</strong>
+</p>
+
+<p align="center">
+  <strong>Contador global atômico • Thread-safe • Docker ready</strong>
+</p>
 
 ## Funcionalidades
 
-- **Rastreamento de Visitas:** Incrementa um contador global de visitas a cada acesso registrado.
-- **Consulta de Estatísticas:** Permite consultar o total de visitas globais e a data da última atualização.
-- **Verificação de Status da API:** Uma rota raiz para verificar se a API está operacional.
+- Incremento atômico do contador global de visitas
+- Consulta das estatísticas atuais sem incrementar
+- Health check da API e conexão com o banco
+- Preparada para ambiente Docker (com docker-compose)
 
-## Tecnologias Utilizadas
+## Tecnologias
 
-- **Node.js:** Ambiente de execução JavaScript no servidor.
-- **Express.js:** Framework web para Node.js, utilizado para criar as rotas da API.
-- **TypeScript:** Superset do JavaScript que adiciona tipagem estática.
-- **MariaDB/MySQL:** Banco de dados relacional para armazenar as estatísticas de visitas.
-  - Driver: `mysql2/promise`
-- **dotenv:** Módulo para carregar variáveis de ambiente a partir de um arquivo `.env`.
+| Tecnologia         | Finalidade                          |
+|--------------------|-------------------------------------|
+| Node.js            | Runtime                             |
+| Express            | Framework HTTP                      |
+| TypeScript         | Tipagem estática                    |
+| PostgreSQL         | Banco de dados                      |
+| pg (node-postgres) | Driver de conexão                   |
+| Docker             | Containerização                     |
+| Docker Compose     | Orquestração local                  |
 
-## Estrutura do Projeto (Inferida)
+## Estrutura do Projeto
 
 ```text
-/
+portfolio-tracker-api/
 ├── src/
 │   ├── Routes/
-│   │   └── visitRoutes.ts        # Define as rotas relacionadas às visitas
+│   │   └── visitRoutes.ts
 │   ├── Services/
-│   │   └── service.ts            # Lógica de negócio (incrementar, buscar visitas)
-│   ├── Interfaces/
-│   │   └── EstatisticaPortfolioGlobal.ts # Interface para os dados de estatísticas
+│   │   └── service.ts                # Lógica de upsert atômico
+│   ├── Interface/
+│   │   └── EstatisticaPortfolioGlobal.ts
 │   ├── Classes/
-│   │   ├── service-error.ts      # Classe de erro para serviços
-│   │   └── database-error.ts     # Classe de erro para o banco de dados
-│   ├── Config/
-│   │   └── database.ts           # Configuração e conexão com o banco de dados
-│   ├── setupRoutes.ts            # Configuração principal das rotas da aplicação
-│   └── server.ts                 # Ponto de entrada da aplicação (não fornecido, mas usual)
-├── .env                          # Arquivo para variáveis de ambiente (NÃO versionar)
+│   │   └── database-error.ts
+│   ├── DB/
+│   │   └── PostgresDB.ts             # Pool + conexão
+│   └── server.ts                     # Entrypoint
+├── .env                              # (Não versionado)
+├── docker-compose.yml                # API + PostgreSQL
+├── Dockerfile
 ├── package.json
 ├── tsconfig.json
 └── README.md
-
 ```
 
 ## Pré-requisitos
 
-- Node.js (versão recomendada: LTS)
-- NPM ou Yarn
-- Uma instância do MariaDB ou MySQL acessível
+**Opção recomendada:**
+- Docker + Docker Compose
 
-## Configuração do Ambiente
+**Opção manual:**
+- Node.js 18+ (LTS)
+- PostgreSQL instalado e rodando
 
-1. Clone o repositório:
+## Como executar o projeto
+
+### 🐳 1. Usando Docker (Recomendado)
 
 ```bash
+# 1. Clone o repositório
 git clone <URL_DO_SEU_REPOSITORIO>
-cd <NOME_DO_SEU_PROJETO>
-Instale as dependências:
+cd portfolio-tracker-api
+
+# 2. Subir os serviços (api + postgres)
+docker-compose up --build -d
+
+# API estará disponível em:
+# → http://localhost:7099
 ```
 
+### 💻 2. Execução local (Sem Docker)
+
+**Passo 1: Instalação**
 ```bash
 npm install
-# ou
-yarn install
 ```
 
-## Crie um arquivo .env na raiz do projeto com as seguintes variáveis:
+**Passo 2: Configuração**
+Crie um arquivo `.env` na raiz do projeto:
 
-```text
-DB_HOST=seu_host_do_banco
-DB_USER=seu_usuario_do_banco
-DB_PASSWORD=sua_senha_do_banco
-DB_PORT=3306 # ou a porta do seu banco
-DB_DATABASE=meu_portfolio_db
-DB_CONNECTION_LIMIT=10 # Opcional, padrão 10
-DB_CONNECT_TIMEOUT=10000 # Opcional, padrão 10000
-Importante: A aplicação não inicia sem DB_HOST, DB_USER ou DB_DATABASE configurados.
+```properties
+# Exemplo de .env
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=seu_usuario
+DB_PASSWORD=sua_senha
+DB_DATABASE=track
+PORT=7099
 ```
 
-Configuração Inicial do Banco de Dados
-Execute este script SQL no seu MariaDB/MySQL:
-
+**Passo 3: Banco de Dados**
+Execute este SQL no seu banco PostgreSQL para criar a estrutura:
 
 ```sql
--- 1. Crie o banco de dados
-CREATE DATABASE meu_portfolio_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE track;
 
--- 2. Selecione o banco
-USE meu_portfolio_db;
+-- Conecte-se ao banco 'track' e rode:
+CREATE TABLE estatisticas_portfolio_global (
+    id              SERIAL PRIMARY KEY,
+    contador_total  INTEGER NOT NULL DEFAULT 0,
+    ultima_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
--- 3. Crie a tabela
-CREATE TABLE `estatisticas_portfolio_global` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `contador_total` INT UNSIGNED NOT NULL DEFAULT 0,
-  `ultima_atualizacao` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- 4. Insira valor inicial
-INSERT INTO `estatisticas_portfolio_global` (id, contador_total) VALUES (1, 0);
+-- Insere o registro inicial (ID 1) se não existir
+INSERT INTO estatisticas_portfolio_global (id, contador_total)
+VALUES (1, 0)
+ON CONFLICT (id) DO NOTHING;
 ```
 
-## Como Executar
-Compile o TypeScript:
-
+**Passo 4: Rodar**
 ```bash
-npm run build
-Inicie o servidor:
+npm run dev
 ```
 
-```bash
-npm start
-Endpoints da API
-Base URL: /api
-```
-## Routes
-Verificação de Status
-GET /
-Verifica se a API está funcionando.
+## Endpoints da API
 
-Resposta (200):
+| Método | Endpoint | Descrição |
+| :--- | :--- | :--- |
+| `GET` | `/` | Health check (API + Banco) |
+| `POST` | `/api/track-visit` | Incrementa contador global (Retorna novo total) |
+| `GET` | `/api/statistics` | Retorna estatísticas atuais (Sem incrementar) |
 
-```json
-{
-  "message": "API Portfolio Tracker está funcionando! 🚀"
-}
-```
+### Exemplo de Resposta (JSON)
 
-Registrar Visita
-POST /api/track-visit
-Incrementa o contador global de visitas.
-
-Resposta (200):
+**POST** `/api/track-visit`
 
 ```json
 {
   "message": "Contador global de visitas atualizado com sucesso!",
-  "id": "ID_DA_ESTATISTICA_GLOBAL",
-  "total_geral_visitas": 125,
-  "ultima_atualizacao": "2025-05-14T12:30:00.000Z"
+  "id": 1,
+  "total_geral_visitas": 142,
+  "ultima_atualizacao": "2026-01-16T14:37:22.145Z"
 }
 ```
 
-Obter Estatísticas
-GET /api/statistics
-Retorna estatísticas globais.
+### Tratamento de Erros
 
-Resposta (200):
+Em caso de erro, a API retorna:
 
 ```json
 {
-  "id": "ID_DA_ESTATISTICA_GLOBAL",
-  "total_geral_visitas": 125,
-  "ultima_atualizacao": "2025-05-14T12:30:00.000Z"
+  "error": "Erro Interno do Servidor",
+  "details": "Detalhes técnicos (apenas em ambiente de desenvolvimento)"
 }
 ```
 
-Tratamento de Erros
-DatabaseError
-
-```json
-{
-  "erro": "Erro de comunicação com o banco de dados.",
-  "detalhes": "Mensagem específica do erro do banco"
-}
-```
-
-ServiceError
-```json
-{
-  "erro": "Erro no serviço.",
-  "detalhes": "Mensagem específica do erro de serviço"
-}
-```
-
-Erro Genérico (500)
-```json
-{
-  "erro": "Erro interno inesperado ao processar a requisição."
-}
-```
-
-Banco de Dados
-Configuração do pool de conexões:
-
-waitForConnections: true
-
-connectionLimit: Definido por DB_CONNECTION_LIMIT (padrão: 10)
-
-queueLimit: 0
-
-connectTimeout: Definido por DB_CONNECT_TIMEOUT (padrão: 10000ms)
+---
+<p align="center">Desenvolvido por Guilherme Ferraz Bonato</p>

@@ -2,21 +2,17 @@ import 'dotenv/config';
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import router from './Routers/routes';
-import { dbTestConnection } from './DB/MariaDB';
+// CORREÇÃO: Apontando para o novo arquivo do Postgres
+import { dbTestConnection } from './DB/PostgresDB';
 
 const app: Express = express();
 const port: number = parseInt(process.env.PORT || '7099', 10);
 
 // --- Configuração de Middlewares ---
-// Middlewares essenciais devem ser configurados antes das rotas.
-// Eles não dependem da conexão com o banco de dados para serem definidos.
-
-// Middleware para permitir que o Express interprete JSON no corpo das requisições
 app.use(express.json());
 
-// Middleware para habilitar CORS com configuração mais segura para o futuro
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || '*', // Permite configurar a origem via .env
+    origin: process.env.CORS_ORIGIN || '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -25,8 +21,6 @@ app.use(cors({
 router(app);
 
 // --- Middlewares de Tratamento de Erros ---
-
-// Middleware para tratar rotas não encontradas (404)
 app.use((req: Request, res: Response, next: NextFunction) => {
     res.status(404).json({
         error: "Rota não encontrada",
@@ -35,7 +29,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     });
 });
 
-// Middleware de tratamento de erros global.
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     console.error("[Server] Erro global capturado:", err.stack);
     res.status(500).json({
@@ -48,9 +41,11 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 // --- Função de Inicialização do Servidor ---
 const startServer = async () => {
     try {
-
         console.log('Verificando conexão com o banco de dados...');
+        
+        // A função agora testa a conexão com o PostgreSQL
         await dbTestConnection();
+        
         console.log('Conexão com o banco de dados estabelecida com sucesso.');
 
         app.listen(port, () => {
