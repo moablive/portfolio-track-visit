@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # --- CONFIGURAÇÕES ---
-CONTAINER_NAME="awlsrvDB_postgres"
+CONTAINER_NAME="server_db_postgres"
 DB_USER="admin_root"
 DB_NAME="track"
 API_CONTAINER="portfolio-track-api"

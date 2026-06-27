@@ -1,15 +1,16 @@
 version: '3.8'
 
 services:
-  portfolio-api:
+  app_portfolio_track_api:
     build: .
-    container_name: portfolio-track-api
+    container_name: app_portfolio_track_api
     restart: unless-stopped
     env_file:
-      - .env
+    - .env
     networks:
-      - awl_network
-
+      awl_network:
+        aliases:
+        - portfolio-track-api
 networks:
   awl_network:
     external: true
