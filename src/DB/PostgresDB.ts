@@ -9,7 +9,7 @@ const dbPoolConfig: PoolConfig = {
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     port: parseInt(process.env.DB_PORT || '5432', 10),
-    database: process.env.DB_DATABASE,
+    database: process.env.DB_NAME,
     // Em Postgres (pg), 'connectionLimit' é chamado de 'max'
     max: process.env.DB_CONNECTION_LIMIT ? parseInt(process.env.DB_CONNECTION_LIMIT, 10) : 10,
     // Em Postgres (pg), 'connectTimeout' é 'connectionTimeoutMillis'
@@ -19,7 +19,7 @@ const dbPoolConfig: PoolConfig = {
 
 // A validação inicial continua a mesma
 if (!dbPoolConfig.host || !dbPoolConfig.user || !dbPoolConfig.database) {
-    console.error("Erro Crítico: Variáveis de ambiente essenciais (DB_HOST, DB_USER, DB_DATABASE) não estão configuradas.");
+    console.error("Erro Crítico: Variáveis de ambiente essenciais (DB_HOST, DB_USER, DB_NAME) não estão configuradas.");
     throw new Error("Configuração do banco de dados incompleta. A aplicação não pode iniciar.");
 }
 
